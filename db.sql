@@ -82,9 +82,9 @@ where not exists (
     select 1
     from (
         select distinct ocp.product_id
-        from orders o
-        join order_contains_product ocp on o.order_id = ocp.order_id
-        where o.user_id = uwfr.user_id
+        from orders
+        join order_contains_product ocp on orders.order_id = ocp.order_id
+        where orders.user_id = uwfr.user_id
     ) ordered_p
     left join (
         select distinct product_id
