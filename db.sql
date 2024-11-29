@@ -285,4 +285,4 @@ user_purchases as (
 select uc.user_id, uc.product_id, uc.name
 from user_coupons uc
 left join user_purchases up on uc.user_id = up.user_id and uc.product_id = up.product_id
-where coalesce(up.purchase_count, 0) = 0
+where coalesce(up.purchase_count) is null
