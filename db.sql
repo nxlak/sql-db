@@ -152,7 +152,8 @@ where order_product_counts.product_count  > average_product_count.avg_product_co
 
 
 --5. Определить пользователей, у которых текущий заказ самый большой по сумме
-
+	
+-- first version
 with user_orders as (
   select user_id, order_id, total_price, to_timestamp(date::text || ' ' || time::text, 'YYYY-MM-DD HH24:MI:SS') as order_datetime
   from orders
@@ -171,7 +172,17 @@ from latest_order_per_user
 join max_total_per_user on latest_order_per_user.user_id = max_total_per_user.user_id
 where latest_order_per_user.total_price = max_total_per_user.max_total_price
 
-
+-- second version
+with ranked_orders as (
+    select user_id, order_id, total_price,
+           rank() over (partition by user_id order by to_timestamp(date::text || ' ' || time::text, 'YYYY-MM-DD HH24:MI:SS') desc) as rn,
+           max(total_price) over (partition by user_id) as max_total_price
+    from orders
+)
+select user_id, order_id as latest_order_id
+from ranked_orders
+where rn = 1 and total_price = max_total_price;
+	
 --------------------------------------------------------------------------------------------------------------------------------------
 
 --СЛОЖНЫЕ
