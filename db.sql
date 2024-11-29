@@ -211,7 +211,7 @@ user_total_orders as (
 ),
 user_most_used_method as (
     select u.user_id, u.pay_method_id, u.method_order_count, uto.total_orders,
-           ROUND((u.method_order_count::DECIMAL / uto.total_orders) * 100, 2) as percentage_usage
+           round((u.method_order_count::decimal / uto.total_orders) * 100, 2) as percentage_usage
     from user_payment_method_counts u
     join (
         select user_id, max(method_order_count) as max_method_count
@@ -222,7 +222,8 @@ user_most_used_method as (
 )
 select fav_method.user_id, fav_method.pay_method_id, fav_method.method_order_count,
   fav_method.total_orders, fav_method.percentage_usage
-from user_most_used_method fav_method;
+from user_most_used_method fav_method
+order by user_id
 
 
 --3. Определить заказы, в которых пользователь потратил больше, чем в предыдущем заказе
