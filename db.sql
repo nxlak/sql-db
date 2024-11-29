@@ -188,12 +188,12 @@ user_order_diffs as (
 ),
 user_avg_time_between_orders as (
     select user_id, count(*) as num_orders,
-           avg(extract(epoch from (order_datetime - prev_order_datetime))) as avg_time_between_orders_seconds
+           avg(extract(day from (order_datetime - prev_order_datetime))) as avg_time_between_orders_days
     from user_order_diffs
     where prev_order_datetime is not null
     group by user_id
 )
-select user_id, num_orders, avg_time_between_orders_seconds
+select user_id, num_orders, avg_time_between_orders_days
 from user_avg_time_between_orders;
 
 
