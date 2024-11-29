@@ -104,7 +104,7 @@ with user_total_spending as (
     group by users.user_id
 )
 select user_id, total_spent,
-    rank() over (
+    dense_rank() over (
         order by total_spent desc
     ) as spending_rank
 from user_total_spending
@@ -121,7 +121,7 @@ with category_average_ratings as (
     group by category.category_id
 ),
 product_category_ratings as (
-    select product.product_id, product.rating AS product_rating,
+    select product.product_id, product.rating as product_rating,
           category.category_id, car.category_avg_rating
     from product
     join product_has_category phc on product.product_id = phc.product_id
@@ -211,9 +211,9 @@ from user_avg_time_between_orders;
 --2. Определить пользователей, которые чаще всего используют определенный платежный метод, и рассчитать процент использования этого метода от общего числа их заказов.
 
 with user_payment_method_counts as (
-    select o.user_id, o.pay_method_id, count(*) as method_order_count
-    from orders o
-    group by o.user_id, o.pay_method_id
+    select orders.user_id, orders.pay_method_id, count(*) as method_order_count
+    from orders
+    group by orders.user_id, orders.pay_method_id
 ),
 user_total_orders as (
     select user_id, count(*) as total_orders
@@ -222,18 +222,16 @@ user_total_orders as (
 ),
 user_most_used_method as (
     select u.user_id, u.pay_method_id, u.method_order_count, uto.total_orders,
-           round((u.method_order_count::decimal / uto.total_orders) * 100, 2) as percentage_usage
+        round((u.method_order_count::decimal / uto.total_orders) * 100, 2) as percentage_usage,
+        row_number() over (
+            partition by u.user_id
+            order by u.method_order_count desc, u.pay_method_id
+        ) as rn
     from user_payment_method_counts u
-    join (
-        select user_id, max(method_order_count) as max_method_count
-        from user_payment_method_counts
-        group by user_id
-    ) max_counts on u.user_id = max_counts.user_id and u.method_order_count = max_counts.max_method_count
     join user_total_orders uto on u.user_id = uto.user_id
 )
-select fav_method.user_id, fav_method.pay_method_id, fav_method.method_order_count,
-  fav_method.total_orders, fav_method.percentage_usage
-from user_most_used_method fav_method
+select * from user_most_used_method
+where rn = 1
 order by user_id
 
 
@@ -266,9 +264,9 @@ select user_id, user_avg_spending, overall_avg_spending
 from (
     select user_id, user_avg_spending, avg(user_avg_spending) over () as overall_avg_spending
     from user_average_spending
-) sub
+) 
 where user_avg_spending > overall_avg_spending
-order by user_avg_spending desc
+order by user_id
 
 
 --5. Найти все продукты, на которые у пользователя есть купоны, и которые он еще не покупал 
